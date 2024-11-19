@@ -1,0 +1,243 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  3.0.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      particleProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include           "$FOAM_CASE/system/controlDict"
+tb1   5;
+td1   2.7;
+tb2   #calc "$tb1 + $td1";
+td2   0.5;
+tb3   #calc "$tb2 + $td2";
+td3   #calc "$endTime - $tb3";
+
+solution
+{
+    active          true;
+    coupled         true;
+    transient       yes;
+    cellValueSourceCorrection off;
+
+    maxCo           1.0;
+
+    interpolationSchemes
+    {
+        rho.air         cell;
+        U.air           cellPoint;
+        mu.air          cell;
+    }
+
+    averagingMethod dual;
+
+    integrationSchemes
+    {
+        U               Euler;
+    }
+
+    sourceTerms
+    {
+        schemes
+        {
+            U           semiImplicit 1;
+        }
+    }
+}
+
+constantProperties
+{
+  rho0            1000;
+  alphaMax        0.80;
+}
+
+subModels
+{
+    particleForces
+    {
+      sphereDrag//ErgunWenYuDrag
+        {
+	  alphac alpha.air;
+        }
+        gravity;
+    }
+
+    injectionModels
+    {
+		
+        model2
+        {
+            type            patchFlowRateInjection; //patchFlowRateInjection
+            patchName       MOUTH3;
+            phi             phi.air;
+            massTotal       0.01;
+            concentration   10000000;
+            SOI             $tb2;  //start of injection
+            duration        $td2;
+            //U0              (0 $vb2 0);
+            //flowRateProfile 0.01;
+
+            parcelBasisType number;  //mass;
+            nParticles      1;
+            parcelConcentration   1;
+            parcelsPerSecond 20000;
+			
+            sizeDistribution
+            {
+                type        general;
+                generalDistribution
+                {
+		  distribution
+			(
+				(2.28935E-05	0.004657414)
+				(2.70181E-05	0.010867299)
+				(3.11892E-05	0.016190058)
+				(3.64042E-05	0.033932588)
+				(4.2491E-05	0.042803852)
+				(4.9051E-05	0.060546381)
+				(5.78882E-05	0.087160175)
+				(6.68252E-05	0.118209602)
+				(7.79985E-05	0.13598318)
+				(0.000085	0.137713077)
+				(9.20511E-05	0.135065004)
+				(0.000107442	0.103128452)
+				(0.00012403	0.059659255)
+				(0.000141605	0.028609828)
+				(0.000168973	0.012641552)
+				(0.000197226	0.007287744)
+				(0.000235344	0.00554454)
+			 );
+                }
+            }
+        }
+		
+    }
+
+    dispersionModel stochasticDispersionRAS;
+
+    patchInteractionModel localInteraction;
+
+    localInteractionCoeffs
+    {
+        patches
+        (
+            "(WALL_BACK|WALL_BOTTOM|WALL_FRONT|WALL_LEFT|WALL_RIGHT|WALL_TOP)"
+            {
+                type stick;
+                e    0.97;
+                mu   0.09;
+            }
+
+            "(MOUTH1|MOUTH2|MOUTH3|MOUTH4|MOUTH5|MOUTH6)"
+            {
+                type stick;
+                e    0.97;
+                mu   0.09;
+            }
+
+            "(NOSE1|NOSE2|NOSE3|NOSE4|NOSE5|NOSE6)"
+            {
+                type stick;
+                e    0.97;
+                mu   0.09;
+            }
+
+            "(PASSENGER1|PASSENGER2|PASSENGER3|PASSENGER4|PASSENGER5|PASSENGER6)"
+            {
+                type stick;
+                e    0.97;
+                mu   0.09;
+            }
+			
+            "(HEAD1|HEAD2|HEAD3|HEAD4|HEAD5|HEAD6)"
+            {
+                type stick;
+                e    0.97;
+                mu   0.09;
+            }
+
+            VENT1
+            {
+                type escape;
+            }
+
+            VENT2    
+            {
+                type escape;
+            }
+        );
+    }
+
+    heatTransferModel none;
+
+    surfaceFilmModel none;
+
+    packingModel implicit;//none;
+
+   explicitCoeffs
+    {
+        particleStressModel
+        {
+            type HarrisCrighton;
+            alphaPacked 0.6;
+            pSolid 10.0;
+            beta 2.0;
+            eps 1.0e-7;
+        }
+        correctionLimitingMethod
+        {
+            type absolute;
+            e 0.9;
+        }
+    }
+
+    implicitCoeffs
+    {
+        alphaMin 0.0001;
+        rhoMin 1.0;
+        applyLimiting true;
+        applyGravity false;
+        particleStressModel
+        {
+            type HarrisCrighton;
+            alphaPacked 0.6;
+            pSolid 5.0;
+            beta 2.0;
+            eps 1.0e-2;
+        }
+    }
+
+    dampingModel none;
+
+    isotropyModel stochastic;
+
+    stochasticCoeffs
+    {
+        timeScaleModel
+        {
+            type isotropic;
+            alphaPacked 0.6;
+            e 0.9;
+        }
+    }
+
+    stochasticCollisionModel none;
+
+    radiation off;
+}
+
+
+cloudFunctions
+{}
+
+
+// ************************************************************************* //

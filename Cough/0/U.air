@@ -1,0 +1,117 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      binary;
+    class       volVectorField;
+    location    "0";
+    object      U.air;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    "(MOUTH1|MOUTH2|MOUTH4|MOUTH5|MOUTH6)"
+    {
+        type            noSlip;
+    }
+	
+	MOUTH3
+    {
+        type            codedFixedValue;
+        value           uniform (0 0 0);
+        name            coughVelocity;
+            
+        code
+        #{
+          const scalar t=this->db().time().value();
+          const vector x0(0,-1,0);
+          const scalar tb=5+2.7;
+          const scalar tc=0.5;
+          if ((tb<t) && (t<(tb+tc)))
+            {
+             operator== (x0*((-65020*Foam::pow((t-tb),2)+34560*(t-tb)+113.4)/(Foam::pow((t-tb),3)+41970*Foam::pow((t-tb),2)-5932*(t-tb)+476.4)));
+            }
+          else 
+            {
+             operator== (x0*0);
+            }
+        #};
+
+     }
+	
+	"(NOSE1|NOSE2|NOSE4|NOSE5|NOSE6)"
+    {
+        type            codedFixedValue;
+        value           uniform (0 0 0);
+        name            breathVelocity1;
+
+        code
+        #{ 
+          const scalar t=this->db().time().value();
+          const vector x0(0,-0.866,-0.5);
+          operator== (x0*(-1.172*Foam::sin(1.167*t)));
+          //operator== (x0*(-2.344*Foam::sin(1.167*t)));
+         #};
+    }
+	
+	NOSE3
+    {
+        type            codedFixedValue;
+        value           uniform (0 0 0);
+        name            breathVelocity2;
+            
+        code
+        #{
+          const scalar t=this->db().time().value();
+          const vector x0(0,-0.866,-0.5);
+          const scalar tb=5+2.7;
+          const scalar tc=0.5;
+          if ((tb<t) && (t<(tb+tc)))
+            {
+             operator== (x0*0);
+            }
+          else 
+            {
+             operator== (x0*(-1.172*Foam::sin(1.167*t)));
+            }
+        #};
+
+     }
+
+    "(VENT1|VENT2)"     
+    {
+        type            pressureInletOutletVelocity;
+        phi             phi.air;
+        inletValue      uniform (0 0 0);
+        value           uniform (0 0 0);
+    }
+
+    "(WALL_BACK|WALL_BOTTOM|WALL_FRONT|WALL_LEFT|WALL_RIGHT|WALL_TOP)"
+    {
+        type            noSlip;
+    }
+
+    "(PASSENGER1|PASSENGER2|PASSENGER3|PASSENGER4|PASSENGER5|PASSENGER6)"
+    {
+        type            noSlip;
+    }
+	
+	"(HEAD1|HEAD2|HEAD3|HEAD4|HEAD5|HEAD6)"
+	{
+        type            noSlip;
+    }
+}
+
+
+// ************************************************************************* //
